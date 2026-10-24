@@ -142,6 +142,28 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `opening the privacy policy opens the privacy policy link`() = runTest {
+        buildViewModel().test(this) {
+            containerHost.handleIntent(ScreenIntent.OpenPrivacyPolicy)
+
+            assertEquals(SideEffect.OpenPrivacyPolicy, awaitSideEffect())
+
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
+    fun `opening the license opens the license link`() = runTest {
+        buildViewModel().test(this) {
+            containerHost.handleIntent(ScreenIntent.OpenLicense)
+
+            assertEquals(SideEffect.OpenLicense, awaitSideEffect())
+
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
     fun `the version shown comes from the version provider`() {
         // Seeded into the initial state rather than reduced, so there is no emission to
         // await - read the container's state directly.

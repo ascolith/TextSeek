@@ -16,5 +16,7 @@ sealed interface ScreenIntent {
     data class SelectTextRecognitionScript(val script: TextRecognitionScript) : ScreenIntent
     data object ReportIssue : ScreenIntent
     data object OpenAcknowledgements : ScreenIntent
+    data object OpenPrivacyPolicy : ScreenIntent
+    data object OpenLicense : ScreenIntent
     data object OpenDebugMenu : ScreenIntent
 }
