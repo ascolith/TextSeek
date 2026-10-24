@@ -1,0 +1,17 @@
+<resources>
+    <!-- Kept in this module rather than core:resources so none of it ships in release builds. -->
+    <string name="debug_section_crash_reporting">Crash Reporting</string>
+    <string name="debug_section_data">Data</string>
+    <string name="debug_force_crash">Force a Crash</string>
+    <string name="debug_force_crash_description">Throws an uncaught exception to test crash reporting</string>
+    <string name="debug_clear_pending_crash">Clear Pending Crash</string>
+    <string name="debug_pending_crash">A crash is pending; the prompt shows at next launch</string>
+    <string name="debug_no_pending_crash">No crash pending</string>
+    <string name="debug_pending_crash_cleared">Pending crash cleared</string>
+    <string name="debug_seed_sample_data">Seed Sample Data</string>
+    <string name="debug_seed_sample_data_description">Adds a sample group and searches</string>
+    <string name="debug_sample_data_seeded">Sample data added</string>
+    <string name="debug_section_onboarding">Onboarding</string>
+    <string name="debug_reset_onboarding">Reset Onboarding</string>
+    <string name="debug_reset_onboarding_description">Shows onboarding again, as on first launch</string>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    android:targetPackage must be a literal: the framework's shortcut parser stores the raw
+    attribute value without resolving @string references, so the debug variant needs its own copy
+    of this file at src/debug/res/xml/shortcuts.xml. Keep the two in sync.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_search"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_quick_search"
+        android:shortcutShortLabel="@string/quick_search">
+        <intent
+            android:action="com.ascolith.textseek.action.QUICK_SEARCH"
+            android:targetPackage="com.ascolith.textseek"
+            android:targetClass="com.ascolith.textseek.ui.MainActivity" />
+    </shortcut>
+</shortcuts>

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">TextSeek</string>
+    <string name="app_function_display_description">Search for text through your camera and see matches highlighted live.</string>
+</resources>

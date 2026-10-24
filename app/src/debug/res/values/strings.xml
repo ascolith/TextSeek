@@ -1,0 +1,4 @@
+<resources>
+    <!-- Overrides the main source set so a debug install is distinguishable on the launcher. -->
+    <string name="app_name">TextDebug</string>
+</resources>

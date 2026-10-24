@@ -1,0 +1,54 @@
+name: Check
+
+# The release workflow only fires on a v* tag, so nothing verified a change before this.
+# This runs on the way in instead: by the time a tag exists the code has already shipped.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push to the same branch makes the in-flight run redundant. Pull requests are keyed
+# per-ref so a push to one PR does not cancel another's.
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # Shallow is fine here, unlike the release workflow: nothing in this job reads tags.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Separate steps rather than one gradle invocation so a failure names which check
+      # broke, and so the later ones still run after an earlier one fails.
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Android Lint
+        if: '!cancelled()'
+        run: ./gradlew :app:lintDebug
+
+      - name: Assemble debug
+        if: '!cancelled()'
+        run: ./gradlew :app:assembleDebug
+
+      # Test and lint reports are only useful when something failed, and that is exactly
+      # when the logs alone are hardest to read.
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/reports/lint-results-*.html
+          if-no-files-found: ignore

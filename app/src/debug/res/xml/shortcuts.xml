@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Overrides the main source set. Identical to src/main/res/xml/shortcuts.xml except for
+    android:targetPackage, which must name the installed package and so carries the debug
+    applicationIdSuffix. It cannot be a @string reference: the framework's shortcut parser stores
+    the raw attribute value without resolving it. Keep this file in sync with the main copy.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_search"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_quick_search"
+        android:shortcutShortLabel="@string/quick_search">
+        <intent
+            android:action="com.ascolith.textseek.action.QUICK_SEARCH"
+            android:targetPackage="com.ascolith.textseek.debug"
+            android:targetClass="com.ascolith.textseek.ui.MainActivity" />
+    </shortcut>
+</shortcuts>
