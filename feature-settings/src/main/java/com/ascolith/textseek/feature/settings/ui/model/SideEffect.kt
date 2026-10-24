@@ -9,5 +9,7 @@ sealed interface SideEffect {
     data object ExportFailed : SideEffect
     data object NavigateToReportIssue : SideEffect
     data object NavigateToAcknowledgements : SideEffect
+    data object OpenPrivacyPolicy : SideEffect
+    data object OpenLicense : SideEffect
     data object NavigateToDebugMenu : SideEffect
 }

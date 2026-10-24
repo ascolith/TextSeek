@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -69,11 +70,14 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
     val screenState by viewModel.collectAsState()
     val importSuccessMessage = stringResource(R.string.import_success)
     val importErrorMessage = stringResource(R.string.import_error)
     val exportErrorMessage = stringResource(R.string.export_error)
+    val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
+    val licenseUrl = stringResource(R.string.gpl_v3_url)
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -100,6 +104,8 @@ fun SettingsScreen(
 
             SideEffect.NavigateToReportIssue -> onReportIssueClicked()
             SideEffect.NavigateToAcknowledgements -> onAcknowledgementsClicked()
+            SideEffect.OpenPrivacyPolicy -> uriHandler.openUri(privacyPolicyUrl)
+            SideEffect.OpenLicense -> uriHandler.openUri(licenseUrl)
             SideEffect.NavigateToDebugMenu -> onDebugMenuClicked?.invoke()
         }
     }
@@ -188,6 +194,28 @@ internal fun SettingsScreenContent(
             supportingContent = { Text(stringResource(R.string.acknowledgements_description)) },
             colors = ListItemDefaults.colors(),
             content = { Text(stringResource(R.string.acknowledgements)) },
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+        ListItem(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onIntent(ScreenIntent.OpenPrivacyPolicy) },
+            supportingContent = { Text(stringResource(R.string.privacy_policy_description)) },
+            colors = ListItemDefaults.colors(),
+            content = { Text(stringResource(R.string.privacy_policy)) },
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+        ListItem(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onIntent(ScreenIntent.OpenLicense) },
+            supportingContent = { Text(stringResource(R.string.license_description)) },
+            colors = ListItemDefaults.colors(),
+            content = { Text(stringResource(R.string.license)) },
         )
 
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
