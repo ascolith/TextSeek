@@ -44,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -535,15 +534,13 @@ private fun VerticalZoomSlider(
     onZoomChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val currentOnZoomChanged by rememberUpdatedState(onZoomChanged)
-    val sliderState = remember {
-        SliderState(value = zoomLevel).apply { onValueChange = { currentOnZoomChanged(it) } }
-    }
+    val sliderState = remember { SliderState(value = zoomLevel) }
     LaunchedEffect(zoomLevel) { sliderState.value = zoomLevel }
 
     val zoomContentDescription = stringResource(R.string.content_description_zoom)
     VerticalSlider(
         state = sliderState,
+        onValueChange = onZoomChanged,
         modifier = modifier.semantics { contentDescription = zoomContentDescription },
         topToBottom = false,
     )

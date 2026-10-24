@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AppFunctionAppMetadata xmlns:appfn="http://schemas.android.com/apk/androidx.appfunctions"
-    appfn:description="Visually searches for text through the device camera: the user points the camera at the world and matching text is highlighted live in the viewfinder.
+    appfn:instructions="Visually searches for text through the device camera: the user points the camera at the world and matching text is highlighted live in the viewfinder.
 Operational Patterns:
   - Use 'startQuickSearch' when the user wants to find a piece of text in their physical surroundings (e.g. a gate number, a name on a list, a word on a shelf).
   - The function returns an intent that opens the camera screen with the search active; the user then points the camera at what they want to scan.

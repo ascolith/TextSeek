@@ -5,7 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.appfunctions.AppFunction
+import androidx.appfunctions.AppFunctionDeclaration
 import androidx.appfunctions.AppFunctionAppUnknownException
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionService
@@ -43,7 +43,7 @@ abstract class BaseTextSeekAppFunctionService : AppFunctionService() {
      * @throws AppFunctionAppUnknownException If the device has no camera. If thrown, tell the
      * user this feature needs a camera and cannot run on this device.
      */
-    @AppFunction(isDescribedByKDoc = true)
+    @AppFunctionDeclaration(isDescribedByKDoc = true)
     suspend fun startQuickSearch(
         query: String,
         caseSensitive: Boolean = false,
