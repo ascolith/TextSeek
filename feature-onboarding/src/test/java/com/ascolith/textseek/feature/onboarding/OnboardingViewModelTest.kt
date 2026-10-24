@@ -32,6 +32,8 @@ class OnboardingViewModelTest {
     fun `forward is blocked until the privacy policy is agreed to`() = runTest {
         buildViewModel().test(this) {
             runOnCreate()
+            containerHost.handleIntent(ScreenIntent.Forward)
+            awaitState()
 
             containerHost.handleIntent(ScreenIntent.Forward)
             expectNoItems()
@@ -51,8 +53,10 @@ class OnboardingViewModelTest {
             runOnCreate()
             containerHost.handleIntent(ScreenIntent.SetPrivacyAgreed(true))
             awaitState()
-            containerHost.handleIntent(ScreenIntent.Forward)
-            awaitState()
+            repeat(2) {
+                containerHost.handleIntent(ScreenIntent.Forward)
+                awaitState()
+            }
 
             containerHost.handleIntent(ScreenIntent.Back)
 
@@ -82,7 +86,7 @@ class OnboardingViewModelTest {
             runOnCreate()
             containerHost.handleIntent(ScreenIntent.SetPrivacyAgreed(true))
             awaitState()
-            repeat(2) {
+            repeat(3) {
                 containerHost.handleIntent(ScreenIntent.Forward)
                 awaitState()
             }

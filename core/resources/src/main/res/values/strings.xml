@@ -95,6 +95,8 @@
     <string name="attach_logs_error">Couldn\'t attach logs. Try again or send without them.</string>
     <string name="no_email_app">No email app found. Email us at %1$s</string>
     <string name="support_email" translatable="false">support@ascolith.com</string>
+    <string name="privacy_policy_url" translatable="false">https://ascolith.com/TextSeek/privacy-policy.html</string>
+    <string name="gpl_v3_url" translatable="false">https://www.gnu.org/licenses/gpl-3.0.html</string>
     <string name="debug">Debug</string>
     <string name="debug_menu">Debug Menu</string>
     <string name="debug_menu_description">Diagnostics and test tools</string>
@@ -105,10 +107,15 @@
     <string name="next">Next</string>
     <string name="finish">Finish</string>
     <string name="onboarding_page_indicator">Page %1$d of %2$d</string>
-    <string name="onboarding_privacy_title">Welcome to TextSeek</string>
-    <string name="onboarding_privacy_body">TextSeek finds text through your camera. Images and your search terms never leave your device. None of your data is collected. Please read the %1$s before continuing.</string>
-    <string name="privacy_policy">privacy policy</string>
-    <string name="onboarding_privacy_agree">I agree to the privacy policy</string>
+    <string name="onboarding_welcome_title">Welcome to TextSeek</string>
+    <string name="onboarding_welcome_body">TextSeek finds text in the real world through your camera.</string>
+    <string name="onboarding_privacy_title">Terms &amp; Privacy</string>
+    <string name="onboarding_privacy_intro">TextSeek is free, open-source software. By continuing, you agree to the legal terms and data practices that govern this application.</string>
+    <string name="onboarding_terms_heading">Licensing &amp; Terms</string>
+    <string name="onboarding_terms_body">This application is open-source software distributed under the strict copyleft protections of the &lt;a href="%1$s"&gt;GNU General Public License v3.0 (GPLv3)&lt;/a&gt;. It is provided entirely \"as is\" and without warranty of any kind. Use of the software is at your own risk.</string>
+    <string name="onboarding_data_privacy_heading">Data Privacy</string>
+    <string name="onboarding_data_privacy_body">We respect your data. Please review our &lt;a href="%1$s"&gt;Privacy Policy&lt;/a&gt; to understand how we securely manage mobile device camera access for real-time text analysis.</string>
+    <string name="onboarding_privacy_agree">I read the license terms and agree to the Privacy Policy</string>
     <string name="onboarding_camera_title">Camera Access</string>
     <string name="camera_access_granted">Camera access granted</string>
     <string name="onboarding_script_title">Choose a Script</string>

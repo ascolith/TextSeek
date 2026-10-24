@@ -63,11 +63,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.fromHtml
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -79,6 +76,7 @@ import com.airbnb.lottie.compose.rememberLottieComposition
 import com.ascolith.textseek.core.composable.TsCameraPermissionAnimation
 import com.ascolith.textseek.core.composable.TsCameraPermissionContent
 import com.ascolith.textseek.core.composable.TsPreview
+import com.ascolith.textseek.core.composable.tsLinkStyles
 import com.ascolith.textseek.core.ui.isHeightCompact
 import com.ascolith.textseek.core.ui.labelResId
 import com.ascolith.textseek.core.ui.sampleResId
@@ -96,8 +94,6 @@ import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
-
-private const val PRIVACY_POLICY_URL = "https://ascolith.com/TextSeek/privacy-policy.html"
 
 @Composable
 fun OnboardingScreen(
@@ -159,6 +155,7 @@ private fun OnboardingContent(
             key = { state.pages[it] },
         ) { index ->
             when (state.pages[index]) {
+                OnboardingPage.Welcome -> WelcomePage()
                 OnboardingPage.PrivacyPolicy -> PrivacyPolicyPage(
                     agreed = state.privacyAgreed,
                     onAgreedChange = { onIntent(ScreenIntent.SetPrivacyAgreed(it)) },
@@ -293,27 +290,48 @@ private fun OnboardingPageColumn(
 }
 
 @Composable
+private fun WelcomePage() {
+    OnboardingPageLayout(
+        titleResId = R.string.onboarding_welcome_title,
+        animation = { OnboardingAnimation(resId = R.raw.lottie_text_search_scan_single, modifier = it) },
+    ) {
+        Text(
+            text = stringResource(R.string.onboarding_welcome_body),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+    }
+}
+
+@Composable
 private fun PrivacyPolicyPage(
     agreed: Boolean,
     onAgreedChange: (Boolean) -> Unit,
 ) {
-    OnboardingPageLayout(
-        titleResId = R.string.onboarding_privacy_title,
-        animation = { OnboardingAnimation(resId = R.raw.lottie_text_search_scan_single, modifier = it) },
-    ) {
-        val linkText = stringResource(R.string.privacy_policy)
-        val body = stringResource(R.string.onboarding_privacy_body, linkText)
-        val linkStyles = TextLinkStyles(
-            SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline),
-        )
+    OnboardingPageLayout(titleResId = R.string.onboarding_privacy_title) {
         Text(
-            text = buildAnnotatedString {
-                append(body)
-                val start = body.indexOf(linkText)
-                if (start >= 0) {
-                    addLink(LinkAnnotation.Url(PRIVACY_POLICY_URL, linkStyles), start, start + linkText.length)
-                }
-            },
+            text = stringResource(R.string.onboarding_privacy_intro),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        PrivacySectionHeading(R.string.onboarding_terms_heading)
+        Text(
+            text = AnnotatedString.fromHtml(
+                htmlString = stringResource(
+                    R.string.onboarding_terms_body,
+                    stringResource(R.string.gpl_v3_url),
+                ),
+                linkStyles = tsLinkStyles(),
+            ),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        PrivacySectionHeading(R.string.onboarding_data_privacy_heading)
+        Text(
+            text = AnnotatedString.fromHtml(
+                htmlString = stringResource(
+                    R.string.onboarding_data_privacy_body,
+                    stringResource(R.string.privacy_policy_url),
+                ),
+                linkStyles = tsLinkStyles(),
+            ),
             style = MaterialTheme.typography.bodyLarge,
         )
         Row(
@@ -332,6 +350,15 @@ private fun PrivacyPolicyPage(
             )
         }
     }
+}
+
+@Composable
+private fun PrivacySectionHeading(@StringRes textResId: Int) {
+    Text(
+        text = stringResource(textResId),
+        modifier = Modifier.semantics { heading() },
+        style = MaterialTheme.typography.titleMedium,
+    )
 }
 
 @Composable
@@ -462,9 +489,17 @@ private fun ScriptCard(
 
 @PreviewLightDark
 @Composable
-private fun PreviewOnboardingPrivacyPolicy() {
+private fun PreviewOnboardingWelcome() {
     TsPreview {
         OnboardingContent(state = UiState(), snackbarHostState = SnackbarHostState(), onIntent = {})
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun PreviewOnboardingPrivacyPolicy() {
+    TsPreview {
+        PrivacyPolicyPage(agreed = false, onAgreedChange = {})
     }
 }
 
@@ -487,9 +522,17 @@ private fun PreviewOnboardingTextRecognitionScript() {
 
 @Preview(widthDp = 891, heightDp = 411)
 @Composable
-private fun PreviewOnboardingPrivacyPolicyLandscape() {
+private fun PreviewOnboardingWelcomeLandscape() {
     TsPreview {
         OnboardingContent(state = UiState(), snackbarHostState = SnackbarHostState(), onIntent = {})
+    }
+}
+
+@Preview(widthDp = 891, heightDp = 411)
+@Composable
+private fun PreviewOnboardingPrivacyPolicyLandscape() {
+    TsPreview {
+        PrivacyPolicyPage(agreed = false, onAgreedChange = {})
     }
 }
 
