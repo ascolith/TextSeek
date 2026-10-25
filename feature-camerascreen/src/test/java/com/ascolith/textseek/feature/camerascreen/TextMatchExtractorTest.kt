@@ -7,6 +7,7 @@ import com.ascolith.textseek.domain.model.SearchSettingId
 import com.ascolith.textseek.domain.model.TsPoint
 import com.ascolith.textseek.domain.model.TsQuad
 import com.ascolith.textseek.feature.camerascreen.ui.matchextractor.TextMatchExtractor
+import com.ascolith.textseek.feature.camerascreen.ui.matchextractor.WordSeparator
 import com.ascolith.textseek.feature.camerascreen.ui.model.MatchOutline
 import com.ascolith.textseek.feature.camerascreen.ui.model.SearchSettingUiModel
 import org.junit.Assert.assertEquals
@@ -17,7 +18,7 @@ import kotlin.math.sin
 
 class TextMatchExtractorTest {
 
-    private val extractor = TextMatchExtractor()
+    private val extractor = TextMatchExtractor(WordSeparator())
 
     @Test
     fun `matches a recognized word that contains the search term`() {
@@ -297,6 +298,24 @@ class TextMatchExtractorTest {
         )
 
         assertEquals(listOf("東京京", "京京"), matches.map { it.text })
+    }
+
+    @Test
+    fun `words are joined with the injected separator`() {
+        val alwaysSpaced = TextMatchExtractor { _, _ -> " " }
+        val recognizedLines = listOf(line("東京", "駅"))
+
+        val unspaced = alwaysSpaced.extract(
+            recognizedLines = recognizedLines,
+            searchSettings = listOf(searchSetting(text = "東京駅")),
+        )
+        assertTrue(unspaced.isEmpty())
+
+        val spaced = alwaysSpaced.extract(
+            recognizedLines = recognizedLines,
+            searchSettings = listOf(searchSetting(text = "東京 駅")),
+        )
+        assertEquals(listOf("東京 駅"), spaced.map { it.text })
     }
 
     @Test

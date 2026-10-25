@@ -12,7 +12,7 @@ internal class SearchTerm(
         private val WHITESPACE = Regex("\\s+")
 
         /** Returns null for a disabled setting, or one with nothing to search for. */
-        fun from(setting: SearchSettingUiModel): SearchTerm? {
+        fun from(setting: SearchSettingUiModel, wordSeparator: IWordSeparator): SearchTerm? {
             if (!setting.enabled) return null
             // Drop empty pieces rather than rely on trim(): on Android \s also matches characters
             // trim() keeps, such as U+0085, and a term of only those must still come out empty.
@@ -20,7 +20,7 @@ internal class SearchTerm(
             if (words.isEmpty()) return null
             // Joined like a line's words, so a term typed with or without spaces between CJK
             // characters matches the same text.
-            val text = words.reduce { joined, word -> joined + separatorBetween(joined, word) + word }
+            val text = words.reduce { joined, word -> joined + wordSeparator.between(joined, word) + word }
             return SearchTerm(text, ignoreCase = !setting.caseSensitive, colorArgb = setting.colorArgb)
         }
     }

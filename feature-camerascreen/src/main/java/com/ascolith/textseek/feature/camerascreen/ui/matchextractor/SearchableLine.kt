@@ -9,12 +9,12 @@ import com.ascolith.textseek.feature.camerascreen.ui.model.TextMatchUiModel
  * A recognized line's words joined back into one string, so a term can match across them, and
  * each hit can be traced back to the words it covers.
  */
-internal class SearchableLine(line: RecognizedLine) {
+internal class SearchableLine(line: RecognizedLine, wordSeparator: IWordSeparator) {
     private val words: List<RecognizedText> = line.words
     private val wordStarts = IntArray(words.size)
     private val text = buildString {
         words.forEachIndexed { index, word ->
-            if (index > 0) append(separatorBetween(words[index - 1].text, word.text))
+            if (index > 0) append(wordSeparator.between(words[index - 1].text, word.text))
             wordStarts[index] = length
             append(word.text)
         }
