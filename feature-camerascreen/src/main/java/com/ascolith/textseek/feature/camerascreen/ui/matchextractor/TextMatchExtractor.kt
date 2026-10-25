@@ -16,14 +16,13 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
         val terms = termsFor(searchSettings)
         if (terms.isEmpty()) return emptyList()
 
-        // Recognized texts are single words, so a multi-word term can only match once each
+        // Recognized texts are single words, so a term that spans words can only match once each
         // line's words are rejoined. Only build the joined lines if such a term is active.
         val lines by lazy(LazyThreadSafetyMode.NONE) { recognizedLines.map { SearchableLine(it.words) } }
         return terms.flatMap { term ->
-            if (WORD_SEPARATOR in term.text) {
+            if (term.canSpanWords) {
                 lines.flatMap { it.findMatches(term) }
             } else {
-                // A term without spaces can't cross a separator, so it matches within one word.
                 recognizedLines.flatMap { line ->
                     line.words
                         .filter { it.text.contains(term.text, term.ignoreCase) }
@@ -48,12 +47,35 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
         return terms
     }
 
-    private class SearchTerm(val text: String, val ignoreCase: Boolean, val colorArgb: Int)
+    private class SearchTerm(val text: String, val ignoreCase: Boolean, val colorArgb: Int) {
+        /**
+         * Whether a hit can cross from one word into the next: only across a space, or across an
+         * empty separator, which always borders a CJK character.
+         */
+        val canSpanWords = WORD_SEPARATOR in text || text.codePoints().anyMatch(::isCjk)
+    }
 
     private class SearchableLine(val words: List<RecognizedText>) {
-        private val text = words.joinToString(WORD_SEPARATOR) { it.text }
-        private val wordStarts = words.dropLast(1).runningFold(0) { start, word ->
-            start + word.text.length + WORD_SEPARATOR.length
+        private val text: String
+        private val wordStarts = IntArray(words.size)
+
+        /** Whether every pair of words is joined by a space, which lets the scan skip whole words. */
+        private val spaceJoined: Boolean
+
+        init {
+            val builder = StringBuilder()
+            var allSpaced = true
+            words.forEachIndexed { index, word ->
+                if (index > 0) {
+                    val separator = separatorBetween(words[index - 1].text, word.text)
+                    if (separator.isEmpty()) allSpaced = false
+                    builder.append(separator)
+                }
+                wordStarts[index] = builder.length
+                builder.append(word.text)
+            }
+            text = builder.toString()
+            spaceJoined = allSpaced
         }
 
         /** Returns a match for each occurrence of [term], one per distinct span of words. */
@@ -61,22 +83,27 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
             var start = text.indexOf(term.text, ignoreCase = term.ignoreCase)
             if (start < 0) return emptyList()
             val matches = mutableListOf<TextMatchUiModel>()
+            var previousSpan = IntRange.EMPTY
             while (start >= 0) {
                 val first = wordIndexAt(start)
                 // Normalized terms never start with a space, but never box a hit that does.
                 if (start < wordEnd(first)) {
-                    val last = wordIndexAt(start + term.text.length - 1)
-                    matches += TextMatchFactory.createTextMatch(
-                        text = text.substring(wordStarts[first], wordEnd(last)),
-                        words = words.subList(first, last + 1),
-                        color = term.colorArgb,
-                    )
+                    val span = first..wordIndexAt(start + term.text.length - 1)
+                    // Starts only increase, so a repeated span always follows its first hit.
+                    if (span != previousSpan) {
+                        matches += TextMatchFactory.createTextMatch(
+                            text = text.substring(wordStarts[span.first], wordEnd(span.last)),
+                            words = words.subList(span.first, span.last + 1),
+                            color = term.colorArgb,
+                        )
+                        previousSpan = span
+                    }
                 }
-                // Words hold no spaces, so each of the term's spaces must fall on a separator, and
-                // any later hit starting in the same word covers the same words.
-                val next = first + 1
-                if (next == words.size) break
-                start = text.indexOf(term.text, startIndex = wordStarts[next], ignoreCase = term.ignoreCase)
+                // Words hold no spaces, so with only spaces between them each of the term's spaces
+                // must fall on a separator, and any later hit starting in the same word covers the
+                // same words. Without a separator a later start can reach further, so try each one.
+                val next = if (spaceJoined) wordStarts.getOrNull(first + 1) ?: break else start + 1
+                start = text.indexOf(term.text, startIndex = next, ignoreCase = term.ignoreCase)
             }
             return matches
         }
@@ -91,12 +118,34 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
     }
 
     // Collapse before trimming: on Android \s also matches characters trim() keeps (e.g. U+0085),
-    // so trimming first could leave a lone separator as the term.
+    // so trimming first could leave a lone separator as the term. The pieces are then rejoined
+    // the same way a line's words are, so a term typed with or without spaces between CJK
+    // characters matches the same text.
     private fun String.normalizeWhitespace() = replace(WHITESPACE, WORD_SEPARATOR).trim()
+        .split(WORD_SEPARATOR)
+        .reduce { joined, piece -> joined + separatorBetween(joined, piece) + piece }
 
     private companion object {
-        /** Joins a line's words, and stands in for any whitespace run in a search term. */
+        /** Joins words, and stands in for any whitespace run in a search term, outside CJK text. */
         const val WORD_SEPARATOR = " "
         val WHITESPACE = Regex("\\s+")
+
+        private val CJK_SCRIPTS = setOf(
+            Character.UnicodeScript.HAN,
+            Character.UnicodeScript.HIRAGANA,
+            Character.UnicodeScript.KATAKANA,
+            Character.UnicodeScript.BOPOMOFO,
+        )
+
+        /**
+         * Chinese and Japanese don't put spaces between words, but ML Kit still splits their runs
+         * into several elements, so join next to a CJK character with no separator at all.
+         */
+        fun separatorBetween(before: String, after: String): String =
+            if (before.isNotEmpty() && after.isNotEmpty() &&
+                (isCjk(before.codePointBefore(before.length)) || isCjk(after.codePointAt(0)))
+            ) "" else WORD_SEPARATOR
+
+        fun isCjk(codePoint: Int) = Character.UnicodeScript.of(codePoint) in CJK_SCRIPTS
     }
 }

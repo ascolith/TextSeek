@@ -265,6 +265,53 @@ class TextMatchExtractorTest {
         assertEquals(listOf("gate", "gate"), matches.map { it.text })
     }
 
+    @Test
+    fun `a CJK term matches across the elements ML Kit splits it into`() {
+        val matches = extractor.extract(
+            recognizedLines = listOf(line("東京", "駅", "3", "番", "線")),
+            searchSettings = listOf(searchSetting(text = "東京駅")),
+        )
+
+        assertEquals(listOf("東京駅"), matches.map { it.text })
+    }
+
+    @Test
+    fun `spaces typed between CJK characters in a term are ignored`() {
+        val matches = extractor.extract(
+            recognizedLines = listOf(line("東京", "駅", "3", "番", "線")),
+            searchSettings = listOf(searchSetting(text = "駅 3 番")),
+        )
+
+        assertEquals(listOf("駅3番"), matches.map { it.text })
+    }
+
+    @Test
+    fun `every CJK hit that reaches different words yields its own match`() {
+        val matches = extractor.extract(
+            recognizedLines = listOf(line("東京", "京", "京")),
+            searchSettings = listOf(searchSetting(text = "京京")),
+        )
+
+        assertEquals(listOf("東京京", "京京"), matches.map { it.text })
+    }
+
+    @Test
+    fun `scripts that space their words still need the space`() {
+        val recognizedLines = listOf(line("서울", "역"))
+
+        val spaced = extractor.extract(
+            recognizedLines = recognizedLines,
+            searchSettings = listOf(searchSetting(text = "서울 역")),
+        )
+        assertEquals(listOf("서울 역"), spaced.map { it.text })
+
+        val unspaced = extractor.extract(
+            recognizedLines = recognizedLines,
+            searchSettings = listOf(searchSetting(text = "서울역")),
+        )
+        assertTrue(unspaced.isEmpty())
+    }
+
     private fun line(vararg words: String) = line(*words.map { recognizedText(it) }.toTypedArray())
 
     private fun line(vararg words: RecognizedText) = RecognizedLine(words.toList())
