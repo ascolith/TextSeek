@@ -15,13 +15,19 @@ data class TextMatchUiModel(
 object TextMatchFactory {
 
     fun createTextMatch(
-        textElement: RecognizedText,
+        words: List<RecognizedText>,
         @ColorInt color: Int,
     ): TextMatchUiModel {
-        val boundingBox = textElement.boundingBox
+        require(words.isNotEmpty()) { "A text match must cover at least one word" }
+        val boundingBox = TsRect(
+            left = words.minOf { it.boundingBox.left },
+            top = words.minOf { it.boundingBox.top },
+            right = words.maxOf { it.boundingBox.right },
+            bottom = words.maxOf { it.boundingBox.bottom },
+        )
         return TextMatchUiModel(
-            text = textElement.text,
-            angle = textElement.angle,
+            text = words.joinToString(" ") { it.text },
+            angle = words.first().angle,
             boundingBox = boundingBox.toComposeRect(),
             color = color,
         )

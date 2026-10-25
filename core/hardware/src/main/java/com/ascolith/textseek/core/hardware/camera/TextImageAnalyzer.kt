@@ -64,17 +64,18 @@ class TextImageAnalyzer @Inject constructor(
 
         recognizerFor(script).process(image)
             .addOnSuccessListener(cameraExecutor) { visionText ->
-                val texts = visionText.textBlocks
-                    .flatMap { it.lines }
-                    .flatMap { it.elements }
+                val lines = visionText.textBlocks.flatMap { it.lines }
 
-                _textFoundFlow.value = texts.mapNotNull {
-                    val boundingBox = it.getBoundingBoxAsTsRect(uprightToSensorMatrix) ?: return@mapNotNull null
-                    RecognizedText(
-                        text = it.text,
-                        boundingBox = boundingBox,
-                        angle = it.angle,
-                    )
+                _textFoundFlow.value = lines.flatMapIndexed { lineIndex, line ->
+                    line.elements.mapNotNull {
+                        val boundingBox = it.getBoundingBoxAsTsRect(uprightToSensorMatrix) ?: return@mapNotNull null
+                        RecognizedText(
+                            text = it.text,
+                            boundingBox = boundingBox,
+                            angle = it.angle,
+                            lineIndex = lineIndex,
+                        )
+                    }
                 }
             }
             .addOnFailureListener(cameraExecutor) { e ->

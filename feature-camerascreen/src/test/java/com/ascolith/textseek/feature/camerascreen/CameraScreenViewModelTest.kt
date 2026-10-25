@@ -246,6 +246,7 @@ class CameraScreenViewModelTest {
                 text = "cat and dog",
                 boundingBox = TsRect(0f, 0f, 1f, 1f),
                 angle = 0f,
+                lineIndex = 0,
             )
         )
         val savedStateHandle = SavedStateHandle(
