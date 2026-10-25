@@ -244,13 +244,13 @@ class CameraScreenViewModelTest {
         )
         recognizedLinesFlow.value = listOf(
             RecognizedLine(
-                listOf(
+                listOf("cat", "and", "dog").map {
                     RecognizedText(
-                        text = "cat and dog",
+                        text = it,
                         boundingBox = TsRect(0f, 0f, 1f, 1f),
                         angle = 0f,
                     )
-                )
+                }
             )
         )
         val savedStateHandle = SavedStateHandle(
