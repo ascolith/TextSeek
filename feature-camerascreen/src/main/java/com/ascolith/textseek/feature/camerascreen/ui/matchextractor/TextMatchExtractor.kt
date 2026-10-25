@@ -48,18 +48,23 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
         private val wordStarts = words.runningFold(0) { start, word -> start + word.text.length + 1 }
 
         /** Returns the words covered by each occurrence of [term], one entry per distinct span. */
-        fun findMatches(term: String, ignoreCase: Boolean): List<List<RecognizedText>> =
-            generateSequence(text.indexOf(term, ignoreCase = ignoreCase)) { previous ->
-                text.indexOf(term, startIndex = previous + 1, ignoreCase = ignoreCase)
+        fun findMatches(term: String, ignoreCase: Boolean): List<List<RecognizedText>> {
+            var start = text.indexOf(term, ignoreCase = ignoreCase)
+            if (start < 0) return emptyList()
+            val matches = mutableListOf<List<RecognizedText>>()
+            var previous = IntRange.EMPTY
+            while (start >= 0) {
+                val indices = wordIndicesCovering(start, start + term.length)
+                // Skip a hit that lies only on a separator, and repeat hits on the same span.
+                // Starts only increase, so a repeated span always follows its first hit.
+                if (!indices.isEmpty() && indices != previous) {
+                    matches += words.slice(indices)
+                    previous = indices
+                }
+                start = text.indexOf(term, startIndex = start + 1, ignoreCase = ignoreCase)
             }
-                .takeWhile { it >= 0 }
-                .map { start -> wordIndicesCovering(start, start + term.length) }
-                // A hit that lies only on a separator covers no words.
-                .filterNot { it.isEmpty() }
-                // Dedupe by position, not content: identical words can legitimately repeat.
-                .distinct()
-                .map { indices -> words.slice(indices) }
-                .toList()
+            return matches
+        }
 
         private fun wordIndicesCovering(start: Int, end: Int): IntRange {
             val first = words.indices.first { wordStarts[it] + words[it].text.length > start }
