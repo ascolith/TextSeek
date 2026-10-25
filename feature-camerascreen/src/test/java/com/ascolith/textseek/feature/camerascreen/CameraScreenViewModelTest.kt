@@ -21,7 +21,8 @@ import com.ascolith.textseek.domain.model.SearchGroupId
 import com.ascolith.textseek.domain.model.SearchSetting
 import com.ascolith.textseek.domain.model.SearchSettingId
 import com.ascolith.textseek.domain.model.TextRecognitionScript
-import com.ascolith.textseek.domain.model.TsRect
+import com.ascolith.textseek.domain.model.TsPoint
+import com.ascolith.textseek.domain.model.TsQuad
 import com.ascolith.textseek.feature.camerascreen.ui.CameraScreenViewModel
 import com.ascolith.textseek.feature.camerascreen.ui.matchextractor.ITextMatchExtractor
 import com.ascolith.textseek.feature.camerascreen.ui.model.ChipType
@@ -247,7 +248,7 @@ class CameraScreenViewModelTest {
                 listOf("cat", "and", "dog").map {
                     RecognizedText(
                         text = it,
-                        boundingBox = TsRect(0f, 0f, 1f, 1f),
+                        outline = TsQuad(TsPoint(0f, 0f), TsPoint(1f, 0f), TsPoint(1f, 1f), TsPoint(0f, 1f)),
                         angle = 0f,
                     )
                 }

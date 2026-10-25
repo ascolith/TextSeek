@@ -4,12 +4,16 @@ import androidx.compose.ui.geometry.Rect as ComposeRect
 import com.ascolith.textseek.domain.model.RecognizedLine
 import com.ascolith.textseek.domain.model.RecognizedText
 import com.ascolith.textseek.domain.model.SearchSettingId
-import com.ascolith.textseek.domain.model.TsRect
+import com.ascolith.textseek.domain.model.TsPoint
+import com.ascolith.textseek.domain.model.TsQuad
 import com.ascolith.textseek.feature.camerascreen.ui.matchextractor.TextMatchExtractor
+import com.ascolith.textseek.feature.camerascreen.ui.model.MatchOutline
 import com.ascolith.textseek.feature.camerascreen.ui.model.SearchSettingUiModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.cos
+import kotlin.math.sin
 
 class TextMatchExtractorTest {
 
@@ -132,14 +136,14 @@ class TextMatchExtractorTest {
         val matches = extractor.extract(
             recognizedLines = listOf(
                 line(
-                    recognizedText("gate", boundingBox = TsRect(1f, 2f, 3f, 4f)),
-                    recognizedText("B12", boundingBox = TsRect(5f, 2f, 8f, 4f)),
+                    recognizedText("gate", outline = box(1f, 2f, 3f, 4f)),
+                    recognizedText("B12", outline = box(5f, 2f, 8f, 4f)),
                 )
             ),
             searchSettings = listOf(searchSetting(text = "gate")),
         )
 
-        assertEquals(ComposeRect(1f, 2f, 3f, 4f), matches.single().boundingBox)
+        assertEquals(MatchOutline.of(ComposeRect(1f, 2f, 3f, 4f)), matches.single().outline)
     }
 
     @Test
@@ -157,15 +161,15 @@ class TextMatchExtractorTest {
         val matches = extractor.extract(
             recognizedLines = listOf(
                 line(
-                    recognizedText("to", boundingBox = TsRect(0f, 10f, 5f, 20f)),
-                    recognizedText("New", boundingBox = TsRect(10f, 9f, 20f, 20f)),
-                    recognizedText("York", boundingBox = TsRect(25f, 10f, 40f, 22f)),
+                    recognizedText("to", outline = box(0f, 10f, 5f, 20f)),
+                    recognizedText("New", outline = box(10f, 9f, 20f, 20f)),
+                    recognizedText("York", outline = box(25f, 10f, 40f, 22f)),
                 )
             ),
             searchSettings = listOf(searchSetting(text = "New York")),
         )
 
-        assertEquals(ComposeRect(10f, 9f, 40f, 22f), matches.single().boundingBox)
+        assertEquals(MatchOutline.of(ComposeRect(10f, 9f, 40f, 22f)), matches.single().outline)
     }
 
     @Test
@@ -312,18 +316,54 @@ class TextMatchExtractorTest {
         assertTrue(unspaced.isEmpty())
     }
 
+    @Test
+    fun `a tilted multi word match is outlined along the text`() {
+        val matches = extractor.extract(
+            recognizedLines = listOf(
+                line(
+                    recognizedText("New", outline = box(0f, 0f, 30f, 10f).rotated(TILT_DEGREES)),
+                    recognizedText("York", outline = box(35f, -1f, 75f, 11f).rotated(TILT_DEGREES)),
+                )
+            ),
+            searchSettings = listOf(searchSetting(text = "New York")),
+        )
+
+        // An upright box around the same words would be about 35 units tall rather than 12.
+        val expected = box(0f, -1f, 75f, 11f).rotated(TILT_DEGREES).corners
+        val actual = matches.single().outline.run { listOf(topLeft, topRight, bottomRight, bottomLeft) }
+        expected.zip(actual).forEach { (expectedCorner, actualCorner) ->
+            assertEquals(expectedCorner.x, actualCorner.x, TOLERANCE)
+            assertEquals(expectedCorner.y, actualCorner.y, TOLERANCE)
+        }
+    }
+
     private fun line(vararg words: String) = line(*words.map { recognizedText(it) }.toTypedArray())
 
     private fun line(vararg words: RecognizedText) = RecognizedLine(words.toList())
 
     private fun recognizedText(
         text: String,
-        boundingBox: TsRect = TsRect(0f, 0f, 1f, 1f),
+        outline: TsQuad = box(0f, 0f, 1f, 1f),
     ) = RecognizedText(
         text = text,
-        boundingBox = boundingBox,
+        outline = outline,
         angle = 0f,
     )
+
+    private fun box(left: Float, top: Float, right: Float, bottom: Float) = TsQuad(
+        topLeft = TsPoint(left, top),
+        topRight = TsPoint(right, top),
+        bottomRight = TsPoint(right, bottom),
+        bottomLeft = TsPoint(left, bottom),
+    )
+
+    private fun TsQuad.rotated(degrees: Float): TsQuad {
+        val radians = Math.toRadians(degrees.toDouble())
+        val cos = cos(radians).toFloat()
+        val sin = sin(radians).toFloat()
+        fun TsPoint.rotated() = TsPoint(x * cos - y * sin, x * sin + y * cos)
+        return TsQuad(topLeft.rotated(), topRight.rotated(), bottomRight.rotated(), bottomLeft.rotated())
+    }
 
     private fun searchSetting(
         id: Long = 1L,
@@ -342,5 +382,7 @@ class TextMatchExtractorTest {
     private companion object {
         const val RED = 0xFFFF0000.toInt()
         const val GREEN = 0xFF00FF00.toInt()
+        const val TILT_DEGREES = 20f
+        const val TOLERANCE = 0.001f
     }
 }

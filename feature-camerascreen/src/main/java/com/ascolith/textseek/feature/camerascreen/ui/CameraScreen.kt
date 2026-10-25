@@ -90,6 +90,7 @@ import com.ascolith.textseek.feature.camerascreen.ui.model.ChipType
 import com.ascolith.textseek.feature.camerascreen.ui.model.QuickSearchLaunch
 import com.ascolith.textseek.feature.camerascreen.ui.model.ScreenIntent
 import com.ascolith.textseek.feature.camerascreen.ui.model.SideEffect
+import com.ascolith.textseek.feature.camerascreen.ui.model.MatchOutline
 import com.ascolith.textseek.feature.camerascreen.ui.model.TextMatchUiModel
 import com.ascolith.textseek.feature.camerascreen.ui.model.TransientScreen
 import com.ascolith.textseek.feature.camerascreen.ui.model.TsDialog
@@ -372,8 +373,8 @@ private fun CameraPreview(
         setFrom(coordinateTransformer.transformMatrix)
         invert()
     }
-    val textRects = textMatches.map {
-        it.copy(boundingBox = it.boundingBox.toUiCoordinates(sensorToBufferMatrix, bufferToUiMatrix))
+    val textOutlines = textMatches.map {
+        it.copy(outline = it.outline.toUiCoordinates(sensorToBufferMatrix, bufferToUiMatrix))
     }
 
     var focusIndicator by remember { mutableStateOf<FocusIndicatorState?>(null) }
@@ -419,9 +420,9 @@ private fun CameraPreview(
                     matchesDescription?.let { contentDescription = it }
                 },
         ) {
-            textRects.forEach {
+            textOutlines.forEach {
                 reusablePath.reset()
-                with(it.boundingBox) {
+                with(it.outline) {
                     reusablePath.moveTo(topLeft.x, topLeft.y)
                     reusablePath.lineTo(topRight.x, topRight.y)
                     reusablePath.lineTo(bottomRight.x, bottomRight.y)
@@ -649,11 +650,11 @@ private fun rememberSettledMatchTexts(textMatches: List<TextMatchUiModel>): List
     return settled
 }
 
-/** Maps a match's box from sensor coordinates to viewfinder coordinates. */
-private fun Rect.toUiCoordinates(
+/** Maps a match's outline from sensor coordinates to viewfinder coordinates. */
+private fun MatchOutline.toUiCoordinates(
     sensorToBufferMatrix: Matrix,
     bufferToUiMatrix: Matrix,
-): Rect = bufferToUiMatrix.map(sensorToBufferMatrix.map(this))
+): MatchOutline = map { bufferToUiMatrix.map(sensorToBufferMatrix.map(it)) }
 
 private val mockChips = listOf(
     Chip(
@@ -688,8 +689,8 @@ private fun PreviewCameraScreen() {
         CameraScreenContent(
             searchChips = mockChips,
             textMatches = listOf(
-                TextMatchUiModel("First", 0f, Rect(80f, 300f, 420f, 400f), Color.Yellow.toArgb()),
-                TextMatchUiModel("Third", 0f, Rect(500f, 700f, 780f, 790f), Color.Red.toArgb()),
+                TextMatchUiModel("First", 0f, MatchOutline.of(Rect(80f, 300f, 420f, 400f)), Color.Yellow.toArgb()),
+                TextMatchUiModel("Third", 0f, MatchOutline.of(Rect(500f, 700f, 780f, 790f)), Color.Red.toArgb()),
             ),
             onSearchChipClicked = {},
             surfaceRequest = null,
@@ -715,7 +716,7 @@ private fun PreviewCameraScreenLandscape() {
         CameraScreenContent(
             searchChips = mockChips,
             textMatches = listOf(
-                TextMatchUiModel("First", 0f, Rect(300f, 300f, 640f, 400f), Color.Yellow.toArgb()),
+                TextMatchUiModel("First", 0f, MatchOutline.of(Rect(300f, 300f, 640f, 400f)), Color.Yellow.toArgb()),
             ),
             onSearchChipClicked = {},
             surfaceRequest = null,

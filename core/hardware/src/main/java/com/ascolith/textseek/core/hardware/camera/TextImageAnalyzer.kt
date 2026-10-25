@@ -2,7 +2,6 @@ package com.ascolith.textseek.core.hardware.camera
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.graphics.RectF
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -21,7 +20,8 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.ascolith.textseek.domain.model.RecognizedLine
 import com.ascolith.textseek.domain.model.RecognizedText
 import com.ascolith.textseek.domain.model.TextRecognitionScript
-import com.ascolith.textseek.domain.model.TsRect
+import com.ascolith.textseek.domain.model.TsPoint
+import com.ascolith.textseek.domain.model.TsQuad
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.Executor
@@ -69,10 +69,10 @@ class TextImageAnalyzer @Inject constructor(
                     .flatMap { it.lines }
                     .mapNotNull { line ->
                         val words = line.elements.mapNotNull {
-                            val boundingBox = it.getBoundingBoxAsTsRect(uprightToSensorMatrix) ?: return@mapNotNull null
+                            val outline = it.getOutlineAsTsQuad(uprightToSensorMatrix) ?: return@mapNotNull null
                             RecognizedText(
                                 text = it.text,
-                                boundingBox = boundingBox,
+                                outline = outline,
                                 angle = it.angle,
                             )
                         }
@@ -117,17 +117,24 @@ class TextImageAnalyzer @Inject constructor(
             true,
         )
 
-    private fun Text.Element.getBoundingBoxAsTsRect(uprightToSensorMatrix: Matrix) =
-        boundingBox?.let {
-            val sensorRect = RectF(it)
-            uprightToSensorMatrix.mapRect(sensorRect)
-            TsRect(
-                left = sensorRect.left,
-                top = sensorRect.top,
-                right = sensorRect.right,
-                bottom = sensorRect.bottom,
-            )
-        }
+    // ML Kit's corner points follow the word's tilt, clockwise from its top left, where the
+    // bounding box is the upright box around them. Fall back to the box if they're missing.
+    private fun Text.Element.getOutlineAsTsQuad(uprightToSensorMatrix: Matrix): TsQuad? {
+        val corners = cornerPoints?.takeIf { it.size == 4 }
+            ?.flatMap { listOf(it.x.toFloat(), it.y.toFloat()) }
+            ?: boundingBox?.run {
+                listOf(left, top, right, top, right, bottom, left, bottom).map { it.toFloat() }
+            }
+            ?: return null
+        val points = corners.toFloatArray()
+        uprightToSensorMatrix.mapPoints(points)
+        return TsQuad(
+            topLeft = TsPoint(points[0], points[1]),
+            topRight = TsPoint(points[2], points[3]),
+            bottomRight = TsPoint(points[4], points[5]),
+            bottomLeft = TsPoint(points[6], points[7]),
+        )
+    }
 
     // ML Kit returns coordinates in the upright (rotated) frame. Downstream consumers map
     // them with the preview's sensor-to-buffer transform, so they must be published in
