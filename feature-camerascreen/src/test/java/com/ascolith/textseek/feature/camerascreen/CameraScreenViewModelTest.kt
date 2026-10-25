@@ -14,6 +14,7 @@ import com.ascolith.textseek.core.hardware.camera.ICameraController
 import com.ascolith.textseek.core.hardware.camera.ITextImageAnalyzer
 import com.ascolith.textseek.domain.feature.vibration.IVibratorController
 import com.ascolith.textseek.domain.model.AppSetting
+import com.ascolith.textseek.domain.model.RecognizedLine
 import com.ascolith.textseek.domain.model.RecognizedText
 import com.ascolith.textseek.domain.model.SearchGroup
 import com.ascolith.textseek.domain.model.SearchGroupId
@@ -59,10 +60,10 @@ class CameraScreenViewModelTest {
 
     private val searchSettingsFlow = MutableStateFlow<List<SearchSetting>>(emptyList())
     private val searchGroupsFlow = MutableStateFlow(listOf(searchGroup))
-    private val recognizedTextsFlow = MutableStateFlow<List<RecognizedText>>(emptyList())
+    private val recognizedLinesFlow = MutableStateFlow<List<RecognizedLine>>(emptyList())
     private val recordingExtractor = RecordingTextMatchExtractor()
     private val appSettingsRepository = FakeAppSettingsRepository()
-    private val textImageAnalyzer = FakeTextImageAnalyzer(recognizedTextsFlow)
+    private val textImageAnalyzer = FakeTextImageAnalyzer(recognizedLinesFlow)
 
     private fun searchSetting(
         id: Long,
@@ -241,12 +242,15 @@ class CameraScreenViewModelTest {
                 searchGroupId = SEARCH_GROUP_ID,
             )
         )
-        recognizedTextsFlow.value = listOf(
-            RecognizedText(
-                text = "cat and dog",
-                boundingBox = TsRect(0f, 0f, 1f, 1f),
-                angle = 0f,
-                lineIndex = 0,
+        recognizedLinesFlow.value = listOf(
+            RecognizedLine(
+                listOf(
+                    RecognizedText(
+                        text = "cat and dog",
+                        boundingBox = TsRect(0f, 0f, 1f, 1f),
+                        angle = 0f,
+                    )
+                )
             )
         )
         val savedStateHandle = SavedStateHandle(
@@ -511,7 +515,7 @@ class CameraScreenViewModelTest {
         var lastSearchSettings: List<SearchSettingUiModel>? = null
 
         override fun extract(
-            recognizedTexts: List<RecognizedText>,
+            recognizedLines: List<RecognizedLine>,
             searchSettings: List<SearchSettingUiModel>,
         ): List<TextMatchUiModel> {
             lastSearchSettings = searchSettings
@@ -588,7 +592,7 @@ class CameraScreenViewModelTest {
     }
 
     private class FakeTextImageAnalyzer(
-        override val recognizedTextsFlow: StateFlow<List<RecognizedText>>,
+        override val recognizedLinesFlow: StateFlow<List<RecognizedLine>>,
     ) : ITextImageAnalyzer {
         override var script: TextRecognitionScript = TextRecognitionScript.LATIN
         override fun analyze(image: ImageProxy) = Unit

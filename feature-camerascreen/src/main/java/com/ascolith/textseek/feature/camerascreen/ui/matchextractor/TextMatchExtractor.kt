@@ -1,5 +1,6 @@
 package com.ascolith.textseek.feature.camerascreen.ui.matchextractor
 
+import com.ascolith.textseek.domain.model.RecognizedLine
 import com.ascolith.textseek.domain.model.RecognizedText
 import com.ascolith.textseek.feature.camerascreen.ui.model.SearchSettingUiModel
 import com.ascolith.textseek.feature.camerascreen.ui.model.TextMatchFactory
@@ -9,7 +10,7 @@ import javax.inject.Inject
 class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
 
     override fun extract(
-        recognizedTexts: List<RecognizedText>,
+        recognizedLines: List<RecognizedLine>,
         searchSettings: List<SearchSettingUiModel>,
     ): List<TextMatchUiModel> {
         val terms = termsFor(searchSettings)
@@ -17,7 +18,7 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
 
         // Recognized texts are single words, so a multi-word term can only match once each
         // line's words are rejoined.
-        val lines = recognizedTexts.groupBy { it.lineIndex }.values.map(::RecognizedLine)
+        val lines = recognizedLines.map { SearchableLine(it.words) }
         return terms.flatMap { term ->
             lines.flatMap { line ->
                 line.findMatches(term.text, term.ignoreCase)
@@ -43,7 +44,7 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
 
     private class SearchTerm(val text: String, val ignoreCase: Boolean, val colorArgb: Int)
 
-    private class RecognizedLine(val words: List<RecognizedText>) {
+    private class SearchableLine(val words: List<RecognizedText>) {
         val text = words.joinToString(" ") { it.text }
         private val wordStarts = words.dropLast(1).runningFold(0) { start, word -> start + word.text.length + 1 }
 

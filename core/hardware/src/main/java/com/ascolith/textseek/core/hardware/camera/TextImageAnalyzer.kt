@@ -18,6 +18,7 @@ import com.google.mlkit.vision.text.devanagari.DevanagariTextRecognizerOptions
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.ascolith.textseek.domain.model.RecognizedLine
 import com.ascolith.textseek.domain.model.RecognizedText
 import com.ascolith.textseek.domain.model.TextRecognitionScript
 import com.ascolith.textseek.domain.model.TsRect
@@ -30,8 +31,8 @@ class TextImageAnalyzer @Inject constructor(
     private val cameraExecutor: Executor,
 ) : ImageAnalysis.Analyzer, ITextImageAnalyzer {
 
-    private val _textFoundFlow = MutableStateFlow<List<RecognizedText>>(emptyList())
-    override val recognizedTextsFlow: StateFlow<List<RecognizedText>> = _textFoundFlow
+    private val _textFoundFlow = MutableStateFlow<List<RecognizedLine>>(emptyList())
+    override val recognizedLinesFlow: StateFlow<List<RecognizedLine>> = _textFoundFlow
 
     @Volatile
     override var script: TextRecognitionScript = TextRecognitionScript.LATIN
@@ -64,19 +65,19 @@ class TextImageAnalyzer @Inject constructor(
 
         recognizerFor(script).process(image)
             .addOnSuccessListener(cameraExecutor) { visionText ->
-                val lines = visionText.textBlocks.flatMap { it.lines }
-
-                _textFoundFlow.value = lines.flatMapIndexed { lineIndex, line ->
-                    line.elements.mapNotNull {
-                        val boundingBox = it.getBoundingBoxAsTsRect(uprightToSensorMatrix) ?: return@mapNotNull null
-                        RecognizedText(
-                            text = it.text,
-                            boundingBox = boundingBox,
-                            angle = it.angle,
-                            lineIndex = lineIndex,
-                        )
+                _textFoundFlow.value = visionText.textBlocks
+                    .flatMap { it.lines }
+                    .mapNotNull { line ->
+                        val words = line.elements.mapNotNull {
+                            val boundingBox = it.getBoundingBoxAsTsRect(uprightToSensorMatrix) ?: return@mapNotNull null
+                            RecognizedText(
+                                text = it.text,
+                                boundingBox = boundingBox,
+                                angle = it.angle,
+                            )
+                        }
+                        words.takeIf { it.isNotEmpty() }?.let(::RecognizedLine)
                     }
-                }
             }
             .addOnFailureListener(cameraExecutor) { e ->
                 Logger.e { "Error: ${e.message}" }

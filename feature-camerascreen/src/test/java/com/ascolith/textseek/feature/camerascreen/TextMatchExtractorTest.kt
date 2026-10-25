@@ -1,6 +1,7 @@
 package com.ascolith.textseek.feature.camerascreen
 
 import androidx.compose.ui.geometry.Rect as ComposeRect
+import com.ascolith.textseek.domain.model.RecognizedLine
 import com.ascolith.textseek.domain.model.RecognizedText
 import com.ascolith.textseek.domain.model.SearchSettingId
 import com.ascolith.textseek.domain.model.TsRect
@@ -17,7 +18,7 @@ class TextMatchExtractorTest {
     @Test
     fun `matches a recognized text that contains the search term`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(recognizedText("gate B12")),
+            recognizedLines = listOf(line(recognizedText("gate B12"))),
             searchSettings = listOf(searchSetting(text = "B12")),
         )
 
@@ -26,16 +27,16 @@ class TextMatchExtractorTest {
 
     @Test
     fun `matching ignores case unless the setting asks for it`() {
-        val recognizedTexts = listOf(recognizedText("Gate B12"))
+        val recognizedLines = listOf(line(recognizedText("Gate B12")))
 
         val insensitive = extractor.extract(
-            recognizedTexts = recognizedTexts,
+            recognizedLines = recognizedLines,
             searchSettings = listOf(searchSetting(text = "gate", caseSensitive = false)),
         )
         assertEquals(1, insensitive.count())
 
         val sensitive = extractor.extract(
-            recognizedTexts = recognizedTexts,
+            recognizedLines = recognizedLines,
             searchSettings = listOf(searchSetting(text = "gate", caseSensitive = true)),
         )
         assertTrue(sensitive.isEmpty())
@@ -44,7 +45,7 @@ class TextMatchExtractorTest {
     @Test
     fun `a case sensitive setting still matches an exact casing`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(recognizedText("Gate B12")),
+            recognizedLines = listOf(line(recognizedText("Gate B12"))),
             searchSettings = listOf(searchSetting(text = "Gate", caseSensitive = true)),
         )
 
@@ -54,7 +55,7 @@ class TextMatchExtractorTest {
     @Test
     fun `disabled settings are skipped`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(recognizedText("gate B12")),
+            recognizedLines = listOf(line(recognizedText("gate B12"))),
             searchSettings = listOf(
                 searchSetting(id = 1L, text = "gate", enabled = false),
                 searchSetting(id = 2L, text = "B12", enabled = true),
@@ -67,7 +68,7 @@ class TextMatchExtractorTest {
     @Test
     fun `settings with empty text are skipped rather than matching everything`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(recognizedText("gate B12")),
+            recognizedLines = listOf(line(recognizedText("gate B12"))),
             searchSettings = listOf(searchSetting(text = "")),
         )
 
@@ -77,7 +78,7 @@ class TextMatchExtractorTest {
     @Test
     fun `each match carries the color of the setting that produced it`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(recognizedText("gate B12")),
+            recognizedLines = listOf(line(recognizedText("gate B12"))),
             searchSettings = listOf(
                 searchSetting(id = 1L, text = "gate", colorArgb = RED),
                 searchSetting(id = 2L, text = "B12", colorArgb = GREEN),
@@ -90,7 +91,7 @@ class TextMatchExtractorTest {
     @Test
     fun `one recognized text matching two settings yields a match per setting`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(recognizedText("gate B12")),
+            recognizedLines = listOf(line(recognizedText("gate B12"))),
             searchSettings = listOf(
                 searchSetting(id = 1L, text = "gate", colorArgb = RED),
                 searchSetting(id = 2L, text = "B12", colorArgb = GREEN),
@@ -103,7 +104,7 @@ class TextMatchExtractorTest {
     @Test
     fun `non matching text produces no matches`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(recognizedText("gate B12")),
+            recognizedLines = listOf(line(recognizedText("gate B12"))),
             searchSettings = listOf(searchSetting(text = "baggage")),
         )
 
@@ -114,13 +115,13 @@ class TextMatchExtractorTest {
     fun `no settings and no texts both produce no matches`() {
         assertTrue(
             extractor.extract(
-                recognizedTexts = listOf(recognizedText("gate B12")),
+                recognizedLines = listOf(line(recognizedText("gate B12"))),
                 searchSettings = emptyList(),
             ).isEmpty()
         )
         assertTrue(
             extractor.extract(
-                recognizedTexts = emptyList(),
+                recognizedLines = emptyList(),
                 searchSettings = listOf(searchSetting(text = "gate")),
             ).isEmpty()
         )
@@ -129,8 +130,8 @@ class TextMatchExtractorTest {
     @Test
     fun `the bounding box is carried across to the match`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(
-                recognizedText("gate B12", boundingBox = TsRect(1f, 2f, 3f, 4f))
+            recognizedLines = listOf(
+                line(recognizedText("gate B12", boundingBox = TsRect(1f, 2f, 3f, 4f)))
             ),
             searchSettings = listOf(searchSetting(text = "gate")),
         )
@@ -141,7 +142,7 @@ class TextMatchExtractorTest {
     @Test
     fun `a multi word term matches consecutive words on the same line`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "flight", "to", "New", "York"),
+            recognizedLines = listOf(line("flight", "to", "New", "York")),
             searchSettings = listOf(searchSetting(text = "New York")),
         )
 
@@ -151,10 +152,12 @@ class TextMatchExtractorTest {
     @Test
     fun `a multi word match is boxed around exactly the words it covers`() {
         val matches = extractor.extract(
-            recognizedTexts = listOf(
-                recognizedText("to", boundingBox = TsRect(0f, 10f, 5f, 20f)),
-                recognizedText("New", boundingBox = TsRect(10f, 9f, 20f, 20f)),
-                recognizedText("York", boundingBox = TsRect(25f, 10f, 40f, 22f)),
+            recognizedLines = listOf(
+                line(
+                    recognizedText("to", boundingBox = TsRect(0f, 10f, 5f, 20f)),
+                    recognizedText("New", boundingBox = TsRect(10f, 9f, 20f, 20f)),
+                    recognizedText("York", boundingBox = TsRect(25f, 10f, 40f, 22f)),
+                )
             ),
             searchSettings = listOf(searchSetting(text = "New York")),
         )
@@ -165,7 +168,7 @@ class TextMatchExtractorTest {
     @Test
     fun `a term that starts or ends mid word covers the partial words`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "gate", "B12", "boarding"),
+            recognizedLines = listOf(line("gate", "B12", "boarding")),
             searchSettings = listOf(searchSetting(text = "ate B1")),
         )
 
@@ -174,16 +177,16 @@ class TextMatchExtractorTest {
 
     @Test
     fun `multi word matching ignores case unless the setting asks for it`() {
-        val recognizedTexts = line(0, "New", "York")
+        val recognizedLines = listOf(line("New", "York"))
 
         val insensitive = extractor.extract(
-            recognizedTexts = recognizedTexts,
+            recognizedLines = recognizedLines,
             searchSettings = listOf(searchSetting(text = "new york", caseSensitive = false)),
         )
         assertEquals(1, insensitive.count())
 
         val sensitive = extractor.extract(
-            recognizedTexts = recognizedTexts,
+            recognizedLines = recognizedLines,
             searchSettings = listOf(searchSetting(text = "new york", caseSensitive = true)),
         )
         assertTrue(sensitive.isEmpty())
@@ -192,7 +195,7 @@ class TextMatchExtractorTest {
     @Test
     fun `surrounding and repeated whitespace in the term is ignored`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "New", "York"),
+            recognizedLines = listOf(line("New", "York")),
             searchSettings = listOf(searchSetting(text = "  New \t  York ")),
         )
 
@@ -202,7 +205,7 @@ class TextMatchExtractorTest {
     @Test
     fun `a whitespace only term is skipped rather than matching everything`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "New", "York"),
+            recognizedLines = listOf(line("New", "York")),
             searchSettings = listOf(searchSetting(text = "   ")),
         )
 
@@ -212,7 +215,7 @@ class TextMatchExtractorTest {
     @Test
     fun `a multi word term does not match words split across lines`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "flight", "to", "New") + line(1, "York", "JFK"),
+            recognizedLines = listOf(line("flight", "to", "New"), line("York", "JFK")),
             searchSettings = listOf(searchSetting(text = "New York")),
         )
 
@@ -222,7 +225,7 @@ class TextMatchExtractorTest {
     @Test
     fun `every occurrence of a term on a line yields its own match`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "New", "York", "to", "New", "York"),
+            recognizedLines = listOf(line("New", "York", "to", "New", "York")),
             searchSettings = listOf(searchSetting(text = "New York")),
         )
 
@@ -232,7 +235,7 @@ class TextMatchExtractorTest {
     @Test
     fun `overlapping occurrences that start in different words each yield a match`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "ha", "ha", "ha"),
+            recognizedLines = listOf(line("ha", "ha", "ha")),
             searchSettings = listOf(searchSetting(text = "ha ha")),
         )
 
@@ -242,7 +245,7 @@ class TextMatchExtractorTest {
     @Test
     fun `repeated occurrences within one word yield a single match`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "aaaa"),
+            recognizedLines = listOf(line("aaaa")),
             searchSettings = listOf(searchSetting(text = "aa")),
         )
 
@@ -252,25 +255,24 @@ class TextMatchExtractorTest {
     @Test
     fun `single word terms still match on each line independently`() {
         val matches = extractor.extract(
-            recognizedTexts = line(0, "gate", "B12") + line(1, "gate", "C4"),
+            recognizedLines = listOf(line("gate", "B12"), line("gate", "C4")),
             searchSettings = listOf(searchSetting(text = "gate")),
         )
 
         assertEquals(listOf("gate", "gate"), matches.map { it.text })
     }
 
-    private fun line(lineIndex: Int, vararg words: String) =
-        words.map { recognizedText(it, lineIndex = lineIndex) }
+    private fun line(vararg words: String) = line(*words.map { recognizedText(it) }.toTypedArray())
+
+    private fun line(vararg words: RecognizedText) = RecognizedLine(words.toList())
 
     private fun recognizedText(
         text: String,
         boundingBox: TsRect = TsRect(0f, 0f, 1f, 1f),
-        lineIndex: Int = 0,
     ) = RecognizedText(
         text = text,
         boundingBox = boundingBox,
         angle = 0f,
-        lineIndex = lineIndex,
     )
 
     private fun searchSetting(
