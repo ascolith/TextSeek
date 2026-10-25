@@ -12,20 +12,25 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
         recognizedTexts: List<RecognizedText>,
         searchSettings: List<SearchSettingUiModel>,
     ): List<TextMatchUiModel> {
+        val terms = searchSettings.mapNotNull { search ->
+            if (!search.enabled) return@mapNotNull null
+            val text = search.text.normalizeWhitespace()
+            if (text.isEmpty()) null else SearchTerm(text, !search.caseSensitive, search.colorArgb)
+        }
+        if (terms.isEmpty()) return emptyList()
+
         // Recognized texts are single words, so a multi-word term can only match once each
         // line's words are rejoined.
         val lines = recognizedTexts.groupBy { it.lineIndex }.values.map(::RecognizedLine)
-        return searchSettings
-            .filter { it.enabled }
-            .flatMap { search ->
-                val term = search.text.normalizeWhitespace()
-                if (term.isEmpty()) return@flatMap emptyList()
-                lines.flatMap { line ->
-                    line.findMatches(term, ignoreCase = !search.caseSensitive)
-                        .map { TextMatchFactory.createTextMatch(it, search.colorArgb) }
-                }
+        return terms.flatMap { term ->
+            lines.flatMap { line ->
+                line.findMatches(term.text, term.ignoreCase)
+                    .map { TextMatchFactory.createTextMatch(it, term.colorArgb) }
             }
+        }
     }
+
+    private class SearchTerm(val text: String, val ignoreCase: Boolean, val colorArgb: Int)
 
     private class RecognizedLine(val words: List<RecognizedText>) {
         val text = words.joinToString(" ") { it.text }
