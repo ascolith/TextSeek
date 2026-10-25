@@ -38,6 +38,8 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
             }
                 .takeWhile { it >= 0 }
                 .map { start -> wordIndicesCovering(start, start + term.length) }
+                // A hit that lies only on a separator covers no words.
+                .filterNot { it.isEmpty() }
                 // Dedupe by position, not content: identical words can legitimately repeat.
                 .distinct()
                 .map { indices -> words.slice(indices) }
@@ -50,7 +52,9 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
         }
     }
 
-    private fun String.normalizeWhitespace() = trim().replace(WHITESPACE, " ")
+    // Collapse before trimming: on Android \s also matches characters trim() keeps (e.g. U+0085),
+    // so trimming first could leave a lone separator as the term.
+    private fun String.normalizeWhitespace() = replace(WHITESPACE, " ").trim()
 
     private companion object {
         val WHITESPACE = Regex("\\s+")
