@@ -14,7 +14,9 @@ data class TextMatchUiModel(
 
 object TextMatchFactory {
 
+    /** [text] is the recognized text spanning [words], as it reads on the line. */
     fun createTextMatch(
+        text: String,
         words: List<RecognizedText>,
         @ColorInt color: Int,
     ): TextMatchUiModel {
@@ -26,7 +28,7 @@ object TextMatchFactory {
             bottom = words.maxOf { it.boundingBox.bottom },
         )
         return TextMatchUiModel(
-            text = words.joinToString(" ") { it.text },
+            text = text,
             angle = words.first().angle,
             boundingBox = boundingBox.toComposeRect(),
             color = color,
