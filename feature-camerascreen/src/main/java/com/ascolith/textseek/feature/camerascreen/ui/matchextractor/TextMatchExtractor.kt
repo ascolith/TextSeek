@@ -17,13 +17,18 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
         if (terms.isEmpty()) return emptyList()
 
         // Recognized texts are single words, so a multi-word term can only match once each
-        // line's words are rejoined.
-        val lines = recognizedLines.map { SearchableLine(it.words) }
+        // line's words are rejoined. Only build the joined lines if such a term is active.
+        val lines by lazy(LazyThreadSafetyMode.NONE) { recognizedLines.map { SearchableLine(it.words) } }
         return terms.flatMap { term ->
-            lines.flatMap { line ->
-                line.findMatches(term.text, term.ignoreCase)
-                    .map { TextMatchFactory.createTextMatch(it, term.colorArgb) }
+            val matches = if (" " in term.text) {
+                lines.flatMap { it.findMatches(term.text, term.ignoreCase) }
+            } else {
+                // A term without spaces can't cross a separator, so it matches within one word.
+                recognizedLines.flatMap { line ->
+                    line.words.filter { it.text.contains(term.text, term.ignoreCase) }.map(::listOf)
+                }
             }
+            matches.map { TextMatchFactory.createTextMatch(it, term.colorArgb) }
         }
     }
 
