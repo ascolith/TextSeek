@@ -230,6 +230,16 @@ class TextMatchExtractorTest {
     }
 
     @Test
+    fun `overlapping occurrences that start in different words each yield a match`() {
+        val matches = extractor.extract(
+            recognizedTexts = line(0, "ha", "ha", "ha"),
+            searchSettings = listOf(searchSetting(text = "ha ha")),
+        )
+
+        assertEquals(listOf("ha ha", "ha ha"), matches.map { it.text })
+    }
+
+    @Test
     fun `repeated occurrences within one word yield a single match`() {
         val matches = extractor.extract(
             recognizedTexts = line(0, "aaaa"),

@@ -45,31 +45,32 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
 
     private class RecognizedLine(val words: List<RecognizedText>) {
         val text = words.joinToString(" ") { it.text }
-        private val wordStarts = words.runningFold(0) { start, word -> start + word.text.length + 1 }
+        private val wordStarts = words.dropLast(1).runningFold(0) { start, word -> start + word.text.length + 1 }
 
         /** Returns the words covered by each occurrence of [term], one entry per distinct span. */
         fun findMatches(term: String, ignoreCase: Boolean): List<List<RecognizedText>> {
             var start = text.indexOf(term, ignoreCase = ignoreCase)
             if (start < 0) return emptyList()
             val matches = mutableListOf<List<RecognizedText>>()
-            var previous = IntRange.EMPTY
             while (start >= 0) {
-                val indices = wordIndicesCovering(start, start + term.length)
-                // Skip a hit that lies only on a separator, and repeat hits on the same span.
-                // Starts only increase, so a repeated span always follows its first hit.
-                if (!indices.isEmpty() && indices != previous) {
-                    matches += words.slice(indices)
-                    previous = indices
+                val first = wordIndexAt(start)
+                // Normalized terms never start with a space, but never box a hit that does.
+                if (start < wordStarts[first] + words[first].text.length) {
+                    matches += words.subList(first, wordIndexAt(start + term.length - 1) + 1)
                 }
-                start = text.indexOf(term, startIndex = start + 1, ignoreCase = ignoreCase)
+                // Words hold no spaces, so each of the term's spaces must fall on a separator, and
+                // any later hit starting in the same word covers the same words.
+                val next = first + 1
+                if (next == words.size) break
+                start = text.indexOf(term, startIndex = wordStarts[next], ignoreCase = ignoreCase)
             }
             return matches
         }
 
-        private fun wordIndicesCovering(start: Int, end: Int): IntRange {
-            val first = words.indices.first { wordStarts[it] + words[it].text.length > start }
-            val last = words.indices.last { wordStarts[it] < end }
-            return first..last
+        /** The index of the word containing [offset], or of the word before it on a separator. */
+        private fun wordIndexAt(offset: Int): Int {
+            val index = wordStarts.binarySearch(offset)
+            return if (index >= 0) index else -index - 2
         }
     }
 
