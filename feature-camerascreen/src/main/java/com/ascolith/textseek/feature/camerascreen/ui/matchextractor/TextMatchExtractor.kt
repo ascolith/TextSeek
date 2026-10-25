@@ -12,11 +12,7 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
         recognizedTexts: List<RecognizedText>,
         searchSettings: List<SearchSettingUiModel>,
     ): List<TextMatchUiModel> {
-        val terms = searchSettings.mapNotNull { search ->
-            if (!search.enabled) return@mapNotNull null
-            val text = search.text.normalizeWhitespace()
-            if (text.isEmpty()) null else SearchTerm(text, !search.caseSensitive, search.colorArgb)
-        }
+        val terms = termsFor(searchSettings)
         if (terms.isEmpty()) return emptyList()
 
         // Recognized texts are single words, so a multi-word term can only match once each
@@ -28,6 +24,21 @@ class TextMatchExtractor @Inject constructor() : ITextMatchExtractor {
                     .map { TextMatchFactory.createTextMatch(it, term.colorArgb) }
             }
         }
+    }
+
+    // Settings change far less often than frames arrive, so keep the last normalization.
+    @Volatile
+    private var cachedTerms: Pair<List<SearchSettingUiModel>, List<SearchTerm>>? = null
+
+    private fun termsFor(searchSettings: List<SearchSettingUiModel>): List<SearchTerm> {
+        cachedTerms?.let { (settings, terms) -> if (settings == searchSettings) return terms }
+        val terms = searchSettings.mapNotNull { search ->
+            if (!search.enabled) return@mapNotNull null
+            val text = search.text.normalizeWhitespace()
+            if (text.isEmpty()) null else SearchTerm(text, !search.caseSensitive, search.colorArgb)
+        }
+        cachedTerms = searchSettings to terms
+        return terms
     }
 
     private class SearchTerm(val text: String, val ignoreCase: Boolean, val colorArgb: Int)
