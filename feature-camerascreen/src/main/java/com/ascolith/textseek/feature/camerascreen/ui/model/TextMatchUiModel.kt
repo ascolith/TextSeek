@@ -3,7 +3,6 @@ package com.ascolith.textseek.feature.camerascreen.ui.model
 import androidx.annotation.ColorInt
 import androidx.compose.ui.geometry.Rect as ComposeRect
 import com.ascolith.textseek.domain.model.RecognizedText
-import com.ascolith.textseek.domain.model.TsRect
 
 data class TextMatchUiModel(
     val text: String,
@@ -21,7 +20,7 @@ object TextMatchFactory {
         @ColorInt color: Int,
     ): TextMatchUiModel {
         require(words.isNotEmpty()) { "A text match must cover at least one word" }
-        val boundingBox = TsRect(
+        val boundingBox = ComposeRect(
             left = words.minOf { it.boundingBox.left },
             top = words.minOf { it.boundingBox.top },
             right = words.maxOf { it.boundingBox.right },
@@ -30,17 +29,8 @@ object TextMatchFactory {
         return TextMatchUiModel(
             text = text,
             angle = words.first().angle,
-            boundingBox = boundingBox.toComposeRect(),
+            boundingBox = boundingBox,
             color = color,
-        )
-    }
-
-    private fun TsRect.toComposeRect(): ComposeRect {
-        return ComposeRect(
-            left = left,
-            top = top,
-            right = right,
-            bottom = bottom
         )
     }
 }
