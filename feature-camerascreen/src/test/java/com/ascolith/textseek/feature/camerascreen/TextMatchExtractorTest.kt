@@ -301,6 +301,33 @@ class TextMatchExtractorTest {
     }
 
     @Test
+    fun `CJK marks and fullwidth forms join like CJK characters`() {
+        val matches = extractor.extract(
+            recognizedLines = listOf(line("センター", "２", "〜", "Ｂ１")),
+            searchSettings = listOf(searchSetting(text = "センター２〜Ｂ１")),
+        )
+
+        assertEquals(listOf("センター２〜Ｂ１"), matches.map { it.text })
+    }
+
+    @Test
+    fun `Hangul in the fullwidth forms still needs the space`() {
+        val recognizedLines = listOf(line("ﾡﾢ", "ﾣ"))
+
+        val spaced = extractor.extract(
+            recognizedLines = recognizedLines,
+            searchSettings = listOf(searchSetting(text = "ﾡﾢ ﾣ")),
+        )
+        assertEquals(listOf("ﾡﾢ ﾣ"), spaced.map { it.text })
+
+        val unspaced = extractor.extract(
+            recognizedLines = recognizedLines,
+            searchSettings = listOf(searchSetting(text = "ﾡﾢﾣ")),
+        )
+        assertTrue(unspaced.isEmpty())
+    }
+
+    @Test
     fun `words are joined with the injected separator`() {
         val alwaysSpaced = TextMatchExtractor { _, _ -> " " }
         val recognizedLines = listOf(line("東京", "駅"))
