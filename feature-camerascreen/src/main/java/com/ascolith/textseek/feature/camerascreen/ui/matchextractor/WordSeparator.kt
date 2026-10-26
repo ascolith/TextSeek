@@ -15,7 +15,13 @@ class WordSeparator @Inject constructor() : IWordSeparator {
         return if (touchesCjk) "" else " "
     }
 
-    private fun isCjk(codePoint: Int) = Character.UnicodeScript.of(codePoint) in CJK_SCRIPTS
+    private fun isCjk(codePoint: Int): Boolean {
+        val script = Character.UnicodeScript.of(codePoint)
+        // Marks like ー, 〜 and fullwidth digits belong to no CJK script, so go by their block.
+        // Korean spaces its words, so the Hangul that shares those blocks still doesn't count.
+        return script in CJK_SCRIPTS ||
+            script != Character.UnicodeScript.HANGUL && Character.UnicodeBlock.of(codePoint) in CJK_BLOCKS
+    }
 
     private companion object {
         val CJK_SCRIPTS = setOf(
@@ -23,6 +29,15 @@ class WordSeparator @Inject constructor() : IWordSeparator {
             Character.UnicodeScript.HIRAGANA,
             Character.UnicodeScript.KATAKANA,
             Character.UnicodeScript.BOPOMOFO,
+        )
+
+        val CJK_BLOCKS = setOf(
+            Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION,
+            Character.UnicodeBlock.HIRAGANA,
+            Character.UnicodeBlock.KATAKANA,
+            Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS,
+            Character.UnicodeBlock.CJK_COMPATIBILITY,
+            Character.UnicodeBlock.ENCLOSED_CJK_LETTERS_AND_MONTHS,
         )
     }
 }
