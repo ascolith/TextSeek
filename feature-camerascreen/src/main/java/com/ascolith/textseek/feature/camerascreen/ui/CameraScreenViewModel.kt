@@ -275,12 +275,12 @@ class CameraScreenViewModel @Inject constructor(
 
     private suspend fun observeRecognizedTextsFlow() = subIntent {
         repeatOnSubscription {
-            textImageAnalyzer.recognizedTextsFlow
-                .collectLatest { recognizedTexts ->
+            textImageAnalyzer.recognizedLinesFlow
+                .collectLatest { recognizedLines ->
                     val activeSettings = state.quickSearch
                         ?.let { listOf(it.toSearchSettingUiModel()) }
                         ?: state.searchSettings
-                    val textMatches = textMatchExtractor.extract(recognizedTexts, activeSettings)
+                    val textMatches = textMatchExtractor.extract(recognizedLines, activeSettings)
                     if (textMatches.isNotEmpty()) {
                         vibratorController.vibrate(
                             effect = IVibratorController.Effect.DoubleClick,
