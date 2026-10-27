@@ -11,5 +11,6 @@ sealed interface SideEffect {
     data object NavigateToAcknowledgements : SideEffect
     data object OpenPrivacyPolicy : SideEffect
     data object OpenLicense : SideEffect
+    data object OpenSourceCode : SideEffect
     data object NavigateToDebugMenu : SideEffect
 }

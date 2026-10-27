@@ -18,5 +18,6 @@ sealed interface ScreenIntent {
     data object OpenAcknowledgements : ScreenIntent
     data object OpenPrivacyPolicy : ScreenIntent
     data object OpenLicense : ScreenIntent
+    data object OpenSourceCode : ScreenIntent
     data object OpenDebugMenu : ScreenIntent
 }

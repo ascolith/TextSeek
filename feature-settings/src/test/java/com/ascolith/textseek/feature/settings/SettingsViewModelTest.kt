@@ -164,6 +164,17 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `opening the source code opens the source code link`() = runTest {
+        buildViewModel().test(this) {
+            containerHost.handleIntent(ScreenIntent.OpenSourceCode)
+
+            assertEquals(SideEffect.OpenSourceCode, awaitSideEffect())
+
+            cancelAndIgnoreRemainingItems()
+        }
+    }
+
+    @Test
     fun `the version shown comes from the version provider`() {
         // Seeded into the initial state rather than reduced, so there is no emission to
         // await - read the container's state directly.
