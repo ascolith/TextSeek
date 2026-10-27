@@ -78,6 +78,7 @@ fun SettingsScreen(
     val exportErrorMessage = stringResource(R.string.export_error)
     val privacyPolicyUrl = stringResource(R.string.privacy_policy_url)
     val licenseUrl = stringResource(R.string.gpl_v3_url)
+    val sourceCodeUrl = stringResource(R.string.source_code_url)
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -106,6 +107,7 @@ fun SettingsScreen(
             SideEffect.NavigateToAcknowledgements -> onAcknowledgementsClicked()
             SideEffect.OpenPrivacyPolicy -> uriHandler.openUri(privacyPolicyUrl)
             SideEffect.OpenLicense -> uriHandler.openUri(licenseUrl)
+            SideEffect.OpenSourceCode -> uriHandler.openUri(sourceCodeUrl)
             SideEffect.NavigateToDebugMenu -> onDebugMenuClicked?.invoke()
         }
     }
@@ -216,6 +218,17 @@ internal fun SettingsScreenContent(
             supportingContent = { Text(stringResource(R.string.license_description)) },
             colors = ListItemDefaults.colors(),
             content = { Text(stringResource(R.string.license)) },
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+        ListItem(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onIntent(ScreenIntent.OpenSourceCode) },
+            supportingContent = { Text(stringResource(R.string.source_code_description)) },
+            colors = ListItemDefaults.colors(),
+            content = { Text(stringResource(R.string.source_code)) },
         )
 
         HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))

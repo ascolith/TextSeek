@@ -57,6 +57,7 @@ class SettingsViewModel @Inject constructor(
             ScreenIntent.OpenAcknowledgements -> intent { postSideEffect(SideEffect.NavigateToAcknowledgements) }
             ScreenIntent.OpenPrivacyPolicy -> intent { postSideEffect(SideEffect.OpenPrivacyPolicy) }
             ScreenIntent.OpenLicense -> intent { postSideEffect(SideEffect.OpenLicense) }
+            ScreenIntent.OpenSourceCode -> intent { postSideEffect(SideEffect.OpenSourceCode) }
             ScreenIntent.OpenDebugMenu -> intent { postSideEffect(SideEffect.NavigateToDebugMenu) }
         }
     }
