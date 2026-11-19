@@ -15,12 +15,10 @@ class CrashRecorderTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
-    private val location by lazy {
-        LogFileLocation(directory = tempFolder.root, name = "test", maxLogFiles = 3)
-    }
+    private val crashFiles by lazy { CrashFiles(directory = tempFolder.root) }
 
-    private fun createRecorder(location: LogFileLocation = this.location) =
-        CrashRecorder(location) { CRASH_TIME }
+    private fun createRecorder(crashFiles: CrashFiles = this.crashFiles) =
+        CrashRecorder(crashFiles) { CRASH_TIME }
 
     @Test
     fun `record writes the stack trace and its causes`() {
@@ -35,7 +33,7 @@ class CrashRecorderTest {
             |	at com.example.Baz.qux(Baz.kt:34)
             |
             """.trimMargin(),
-            location.crashFile.readText(),
+            crashFiles.crashFile.readText(),
         )
     }
 
@@ -43,7 +41,7 @@ class CrashRecorderTest {
     fun `record leaves out exception messages, which can contain search terms`() {
         createRecorder().record("main", crash())
 
-        val written = location.crashFile.readText()
+        val written = crashFiles.crashFile.readText()
         assertFalse(written.contains(SECRET))
     }
 
@@ -51,7 +49,7 @@ class CrashRecorderTest {
     fun `record marks the crash as pending`() {
         createRecorder().record("main", crash())
 
-        assertTrue(location.crashPendingMarker.exists())
+        assertTrue(crashFiles.pendingMarker.exists())
     }
 
     @Test
@@ -68,7 +66,7 @@ class CrashRecorderTest {
             |	at com.example.Later.run(Later.kt:1)
             |
             """.trimMargin(),
-            location.crashFile.readText(),
+            crashFiles.crashFile.readText(),
         )
     }
 
@@ -80,7 +78,7 @@ class CrashRecorderTest {
 
         createRecorder().record("main", first)
 
-        assertEquals(1, location.crashFile.readLines().count { it == "Caused by: java.io.IOException" })
+        assertEquals(1, crashFiles.crashFile.readLines().count { it == "Caused by: java.io.IOException" })
     }
 
     @Test
@@ -90,7 +88,7 @@ class CrashRecorderTest {
 
         createRecorder().handlerWrapping(previous).uncaughtException(Thread.currentThread(), crash)
 
-        assertTrue(location.crashPendingMarker.exists())
+        assertTrue(crashFiles.pendingMarker.exists())
         assertSame(crash, previous.received)
     }
 
@@ -98,7 +96,7 @@ class CrashRecorderTest {
     fun `the handler still passes the crash on when it cannot be recorded`() {
         val previous = RecordingHandler()
         val crash = crash()
-        val unwritable = location.copy(directory = tempFolder.root.resolve("missing"))
+        val unwritable = crashFiles.copy(directory = tempFolder.root.resolve("missing"))
 
         createRecorder(unwritable).handlerWrapping(previous).uncaughtException(Thread.currentThread(), crash)
 

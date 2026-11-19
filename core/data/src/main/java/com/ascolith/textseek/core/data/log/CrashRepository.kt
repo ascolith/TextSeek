@@ -15,15 +15,15 @@ interface ICrashRepository {
 }
 
 class DefaultCrashRepository @Inject constructor(
-    private val location: LogFileLocation,
+    private val crashFiles: CrashFiles,
     @param:Dispatcher(TsDispatcher.IO) private val ioDispatcher: CoroutineContext,
 ) : ICrashRepository {
 
     override suspend fun hasPendingCrash(): Boolean = withContext(ioDispatcher) {
-        location.crashPendingMarker.exists()
+        crashFiles.pendingMarker.exists()
     }
 
     override suspend fun clearPendingCrash() {
-        withContext(ioDispatcher) { location.crashPendingMarker.delete() }
+        withContext(ioDispatcher) { crashFiles.pendingMarker.delete() }
     }
 }

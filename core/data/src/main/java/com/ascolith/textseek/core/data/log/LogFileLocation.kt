@@ -12,12 +12,6 @@ data class LogFileLocation(
     val name: String,
     val maxLogFiles: Int,
 ) {
-    /** The stack trace of the most recent crash. Outside Kermit's naming, so it is never rolled. */
-    val crashFile: File get() = File(directory, "crash.log")
-
-    /** Present from a crash until the user has answered the crash prompt. */
-    val crashPendingMarker: File get() = File(directory, "crash.pending")
-
     /** The log files that currently exist, oldest first. */
     fun existingFilesOldestFirst(): List<File> =
         (maxLogFiles - 1 downTo 0)

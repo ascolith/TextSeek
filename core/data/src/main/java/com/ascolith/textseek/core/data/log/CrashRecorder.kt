@@ -7,7 +7,7 @@ import javax.inject.Inject
 
 /** Records uncaught exceptions so the next launch can offer to report them. */
 class CrashRecorder @Inject constructor(
-    private val location: LogFileLocation,
+    private val crashFiles: CrashFiles,
     private val timeProvider: ITimeProvider,
 ) {
     fun install() {
@@ -27,8 +27,8 @@ class CrashRecorder @Inject constructor(
         }
 
     internal fun record(threadName: String, throwable: Throwable) {
-        location.crashFile.writeText(format(threadName, throwable))
-        location.crashPendingMarker.createNewFile()
+        crashFiles.crashFile.writeText(format(threadName, throwable))
+        crashFiles.pendingMarker.createNewFile()
     }
 
     // Class names and frames only: exception messages can contain search terms.
