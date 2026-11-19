@@ -17,6 +17,7 @@ interface ILogRepository {
 
 class DefaultLogRepository @Inject constructor(
     private val location: LogFileLocation,
+    private val crashFiles: CrashFiles,
     @param:Dispatcher(TsDispatcher.IO) private val ioDispatcher: CoroutineContext,
 ) : ILogRepository {
 
@@ -25,7 +26,7 @@ class DefaultLogRepository @Inject constructor(
     override suspend fun readLogs(): Either<Throwable, String> = withContext(ioDispatcher) {
         try {
             val logs = location.existingFilesOldestFirst().joinToString(separator = "") { it.readText() }
-            val crash = location.crashFile.takeIf { it.exists() }?.readText()
+            val crash = crashFiles.crashFile.takeIf { it.exists() }?.readText()
             (if (crash == null) logs else "$logs$CRASH_SEPARATOR$crash").right()
         } catch (e: IOException) {
             e.left()

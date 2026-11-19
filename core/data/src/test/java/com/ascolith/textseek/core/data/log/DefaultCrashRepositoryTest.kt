@@ -13,34 +13,32 @@ class DefaultCrashRepositoryTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
-    private val location by lazy {
-        LogFileLocation(directory = tempFolder.root, name = "test", maxLogFiles = 3)
-    }
+    private val crashFiles by lazy { CrashFiles(directory = tempFolder.root) }
 
     @Test
     fun `no crash is pending when the marker is absent`() = runTest {
-        val repository = DefaultCrashRepository(location, StandardTestDispatcher(testScheduler))
+        val repository = DefaultCrashRepository(crashFiles, StandardTestDispatcher(testScheduler))
 
         assertFalse(repository.hasPendingCrash())
     }
 
     @Test
     fun `a crash is pending while the marker exists`() = runTest {
-        location.crashPendingMarker.createNewFile()
-        val repository = DefaultCrashRepository(location, StandardTestDispatcher(testScheduler))
+        crashFiles.pendingMarker.createNewFile()
+        val repository = DefaultCrashRepository(crashFiles, StandardTestDispatcher(testScheduler))
 
         assertTrue(repository.hasPendingCrash())
     }
 
     @Test
     fun `clearing removes the marker but keeps the crash log`() = runTest {
-        location.crashPendingMarker.createNewFile()
-        location.crashFile.writeText("trace\n")
-        val repository = DefaultCrashRepository(location, StandardTestDispatcher(testScheduler))
+        crashFiles.pendingMarker.createNewFile()
+        crashFiles.crashFile.writeText("trace\n")
+        val repository = DefaultCrashRepository(crashFiles, StandardTestDispatcher(testScheduler))
 
         repository.clearPendingCrash()
 
         assertFalse(repository.hasPendingCrash())
-        assertTrue(location.crashFile.exists())
+        assertTrue(crashFiles.crashFile.exists())
     }
 }

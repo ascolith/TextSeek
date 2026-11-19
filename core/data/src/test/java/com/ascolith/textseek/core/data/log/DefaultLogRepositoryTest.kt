@@ -17,6 +17,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import kotlin.time.Duration.Companion.milliseconds
 
 class DefaultLogRepositoryTest {
 
@@ -27,8 +28,10 @@ class DefaultLogRepositoryTest {
         LogFileLocation(directory = tempFolder.root, name = "test", maxLogFiles = 3)
     }
 
+    private val crashFiles by lazy { CrashFiles(directory = tempFolder.root) }
+
     private fun createRepository(dispatcher: TestDispatcher) =
-        DefaultLogRepository(location, dispatcher)
+        DefaultLogRepository(location, crashFiles, dispatcher)
 
     private fun writeLogFile(fileName: String, content: String) {
         tempFolder.root.resolve(fileName).writeText(content)
@@ -73,7 +76,7 @@ class DefaultLogRepositoryTest {
     fun `readLogs appends the last crash after the rolled files`() = runTest {
         writeLogFile("test.log", "newest\n")
         writeLogFile("test-1.log", "oldest\n")
-        location.crashFile.writeText("trace\n")
+        crashFiles.crashFile.writeText("trace\n")
         val repository = createRepository(StandardTestDispatcher(testScheduler))
 
         assertEquals("oldest\nnewest\n--- Last crash ---\ntrace\n", repository.readLogs().getOrNull())
@@ -104,7 +107,7 @@ class DefaultLogRepositoryTest {
         withContext(Dispatchers.Default) {
             withTimeout(5.seconds) {
                 while (location.existingFilesOldestFirst().none { "round trip" in it.readText() }) {
-                    delay(10)
+                    delay(10.milliseconds)
                 }
             }
         }

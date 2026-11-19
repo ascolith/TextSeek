@@ -3,6 +3,7 @@ package com.ascolith.textseek.core.data.di
 import android.content.Context
 import co.touchlab.kermit.io.RollingFileLogWriter
 import co.touchlab.kermit.io.RollingFileLogWriterConfig
+import com.ascolith.textseek.core.data.log.CrashFiles
 import com.ascolith.textseek.core.data.log.DefaultCrashRepository
 import com.ascolith.textseek.core.data.log.DefaultLogRepository
 import com.ascolith.textseek.core.data.log.ICrashRepository
@@ -50,6 +51,13 @@ interface LoggingModule {
             name = LOG_FILE_NAME,
             maxLogFiles = MAX_LOG_FILES,
         )
+
+        // Beside the logs, so the crash survives as long as they do and goes into the same report
+        @Singleton
+        @Provides
+        fun provideCrashFiles(
+            location: LogFileLocation,
+        ): CrashFiles = CrashFiles(directory = location.directory)
 
         // Singleton: each instance owns a writer thread and an open sink on the same file.
         @Singleton
